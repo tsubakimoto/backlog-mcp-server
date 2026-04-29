@@ -172,7 +172,7 @@ The same MCP HTTP transport can also run on Azure Functions v4.
 - **Auth:** `/mcp` uses Azure Functions `function` auth by default
 - **Default behavior:** Azure Functions enables `MCP_HTTP_JSON_RESPONSE=true`
 - **Infra:** `infra/main.bicep`
-- **Guide:** [`docs/azure-functions.md`](./docs/azure-functions.md)
+- **Guide:** [`docs/azure-functions.md`](./docs/azure-functions.md) (Flex Consumption)
 
 Quick start:
 

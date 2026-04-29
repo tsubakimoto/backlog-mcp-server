@@ -11,6 +11,12 @@
     "nodeMajorVersion": {
       "value": "22"
     },
+    "maximumInstanceCount": {
+      "value": 40
+    },
+    "instanceMemoryMB": {
+      "value": 2048
+    },
     "backlogDomain": {
       "value": "your-domain.backlog.com"
     },
@@ -27,6 +33,9 @@
       "value": "50000"
     },
     "prefix": {
+      "value": ""
+    },
+    "mcpHttpAllowedHosts": {
       "value": ""
     }
   }

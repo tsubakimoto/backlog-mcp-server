@@ -8,7 +8,7 @@ This repository can run the existing MCP HTTP transport on Azure Functions v4 wi
 - Azure Functions v4 HTTP triggers for `/health` and `/mcp`
 - `host.json` with an empty route prefix so the endpoints stay `/health` and `/mcp`
 - `local.settings.json.example` for local development
-- `infra/main.bicep` for a Linux Consumption Function App, Storage Account, Application Insights, and Log Analytics workspace
+- `infra/main.bicep` for a Flex Consumption Function App, Storage Account, Application Insights, and Log Analytics workspace
 
 ## Requirements
 
@@ -54,34 +54,42 @@ This repository can run the existing MCP HTTP transport on Azure Functions v4 wi
 
    ```bash
    curl http://localhost:7071/mcp \
+     -H 'accept: application/json, text/event-stream' \
      -H 'content-type: application/json' \
      -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"local-test","version":"1.0.0"}}}'
    ```
+
+   If the `Accept: application/json, text/event-stream` header is omitted, `/mcp` returns `406 Not Acceptable`.
 
 ## Azure deployment
 
 This repository assumes Azure Functions Core Tools publish as the default deployment path.
 
+> [!IMPORTANT]
+> Azure Functions doesn't support in-place migration from Linux Consumption to Flex Consumption. Use a new Function App name / plan when validating this template.
+
 1. Create a resource group if needed:
 
    ```bash
    RESOURCE_GROUP=<resource-group>
-   REGION=<region>
+   REGION=<flex-consumption-region>
    az group create --name $RESOURCE_GROUP --location $REGION
    ```
 
 2. Deploy infrastructure:
 
    ```bash
-   FUNCTION_APP_NAME=<function-app-name>
+   FUNCTION_APP_NAME=<new-function-app-name>
    BACKLOG_DOMAIN=<your-domain.backlog.com>
    az deployment group create \
-     --resource-group $RESOURCE_GROUP \
-     --template-file infra/main.bicep \
-     --parameters @infra/main.parameters.example.json \
-     --parameters appName=$FUNCTION_APP_NAME \
-     --parameters backlogDomain=$BACKLOG_DOMAIN
+      --resource-group $RESOURCE_GROUP \
+      --template-file infra/main.bicep \
+      --parameters @infra/main.parameters.example.json \
+      --parameters appName=$FUNCTION_APP_NAME \
+      --parameters backlogDomain=$BACKLOG_DOMAIN
    ```
+
+   The template creates a new Flex Consumption plan (`FC1`) and configures the app with deployment storage in Blob Storage.
 
 3. Set the Backlog API key as an app setting.
 
@@ -90,12 +98,14 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
    ```bash
    BACKLOG_API_KEY=<your-api-key>
    az functionapp config appsettings set \
-     --name $FUNCTION_APP_NAME \
-     --resource-group $RESOURCE_GROUP \
-     --settings BACKLOG_API_KEY=$BACKLOG_API_KEY
+      --name $FUNCTION_APP_NAME \
+      --resource-group $RESOURCE_GROUP \
+      --settings BACKLOG_API_KEY=$BACKLOG_API_KEY
    ```
 
    Or set a Key Vault reference string in the same `BACKLOG_API_KEY` setting after granting the Function App managed identity access to the secret.
+
+   The Bicep template only writes `BACKLOG_API_KEY` when `backlogApiKeySettingValue` is explicitly provided, so a later redeploy won't blank the existing secret by default.
 
 4. Publish the application:
 
@@ -104,7 +114,18 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
    func azure functionapp publish $FUNCTION_APP_NAME --javascript
    ```
 
-5. Get a function key and call the MCP endpoint:
+   Flex Consumption deploys the package to the Blob container configured in `properties.functionAppConfig.deployment`.
+
+5. Verify that the app is running on Flex Consumption:
+
+   ```bash
+   az functionapp plan show \
+     --resource-group $RESOURCE_GROUP \
+     --name "${FUNCTION_APP_NAME}-plan" \
+     --query '{sku:sku.name,tier:sku.tier,reserved:properties.reserved}' -o json
+   ```
+
+6. Get a function key and call the MCP endpoint:
 
    ```bash
    FUNCTION_KEY=$(az functionapp function keys list \
@@ -115,9 +136,18 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
    ```
 
    ```bash
-   curl "https://$FUNCTION_APP_NAME.azurewebsites.net/mcp?code=${FUNCTION_KEY}" \
-     -H 'content-type: application/json' \
-     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"azure-test","version":"1.0.0"}}}'
+    curl "https://$FUNCTION_APP_NAME.azurewebsites.net/mcp?code=${FUNCTION_KEY}" \
+      -H 'accept: application/json, text/event-stream' \
+      -H 'content-type: application/json' \
+      -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"azure-test","version":"1.0.0"}}}'
+    ```
+
+   If the `Accept: application/json, text/event-stream` header is omitted, `/mcp` returns `406 Not Acceptable`.
+
+7. Validate the health endpoint:
+
+   ```bash
+   curl "https://$FUNCTION_APP_NAME.azurewebsites.net/health"
    ```
 
 ## App settings
@@ -126,7 +156,6 @@ Required:
 
 - `BACKLOG_DOMAIN` or multi-org `BACKLOG_ORG_<NAME>_DOMAIN`
 - `BACKLOG_API_KEY` or multi-org `BACKLOG_ORG_<NAME>_API_KEY`
-- `FUNCTIONS_WORKER_RUNTIME=node`
 - `AzureWebJobsStorage`
 
 Recommended defaults on Azure:
@@ -148,6 +177,11 @@ Optional:
 `/mcp` uses Azure Functions `function` auth by default, so clients typically call it with `?code=<function-key>` unless another auth layer is added in front.
 
 HTTP MCP sessions remain in memory. This initial Azure Functions support is intended for single-instance or sticky usage. Cold starts and scale-out can invalidate `mcp-session-id` values because the registry is instance-local.
+
+Flex Consumption-specific notes:
+
+- `FUNCTIONS_WORKER_RUNTIME` and `linuxFxVersion` aren't used; the template sets `properties.functionAppConfig.runtime` instead.
+- The deployment package location is configured in `properties.functionAppConfig.deployment`, so `WEBSITE_RUN_FROM_PACKAGE` and content share settings aren't required.
 
 Current non-goals / TODO:
 
