@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "BACKLOG_DOMAIN": "your-domain.backlog.com",
+    "BACKLOG_API_KEY": "your-api-key",
+    "MCP_HTTP_JSON_RESPONSE": "true",
+    "ENABLE_TOOLSETS": "all",
+    "ENABLE_DYNAMIC_TOOLSETS": "false",
+    "OPTIMIZE_RESPONSE": "false",
+    "MAX_TOKENS": "50000",
+    "PREFIX": ""
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "backlog-mcp-dev"
+    },
+    "location": {
+      "value": "japaneast"
+    },
+    "nodeMajorVersion": {
+      "value": "22"
+    },
+    "backlogDomain": {
+      "value": "your-domain.backlog.com"
+    },
+    "enableToolsets": {
+      "value": "all"
+    },
+    "enableDynamicToolsets": {
+      "value": "false"
+    },
+    "optimizeResponse": {
+      "value": "false"
+    },
+    "maxTokens": {
+      "value": "50000"
+    },
+    "prefix": {
+      "value": ""
+    }
+  }
+}
