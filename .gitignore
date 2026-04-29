@@ -17,6 +17,7 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+local.settings.json
 
 # Editor directories and files
 .idea/
@@ -50,4 +51,3 @@ coverage/
 # Temporary files
 tmp/
 temp/
-

@@ -1,0 +1,10 @@
+src/**/*.test.ts
+memory-bank/**
+translationConfig/**
+.azure/**
+docs/**
+coverage/**
+README.ja.md
+README.md
+CHANGELOG.md
+Dockerfile
