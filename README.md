@@ -150,6 +150,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 
 - **Endpoint:** `POST`, `GET`, and `DELETE` on `http://<host>:<port><path>` (default path `/mcp`).
 - **Session:** After `initialize`, clients must send the `mcp-session-id` header on later requests (as returned by the server).
+- **Current limitation:** Sessions are stored in-memory per process. Cold starts, restarts, or multi-instance scale-out can invalidate `mcp-session-id` values. TTL/eviction for the in-memory registry is not implemented yet.
 - **Security:** Default bind is `127.0.0.1`. Do not expose the HTTP port to untrusted networks without authentication and TLS; it allows full use of your Backlog API key via MCP tools.
 
 Environment variables (CLI flags override when both are set):
@@ -162,6 +163,27 @@ Environment variables (CLI flags override when both are set):
 | `MCP_HTTP_PATH` | URL path (default `/mcp`) |
 | `MCP_HTTP_JSON_RESPONSE` | `true` to prefer JSON responses over SSE when supported |
 | `MCP_HTTP_ALLOWED_HOSTS` | Comma-separated allowed `Host` values when binding to `0.0.0.0` (DNS rebinding protection) |
+
+### Azure Functions
+
+The same MCP HTTP transport can also run on Azure Functions v4.
+
+- **Endpoints:** `GET /health`, `GET|POST|DELETE /mcp`
+- **Auth:** `/mcp` uses Azure Functions `function` auth by default
+- **Default behavior:** Azure Functions enables `MCP_HTTP_JSON_RESPONSE=true`
+- **Infra:** `infra/main.bicep`
+- **Guide:** [`docs/azure-functions.md`](./docs/azure-functions.md)
+
+Quick start:
+
+```bash
+npm install
+npm run build
+cp local.settings.json.example local.settings.json
+npm run start:functions
+```
+
+For Azure deployment, secret injection, and validation steps, see [`docs/azure-functions.md`](./docs/azure-functions.md).
 
 ## Tool Configuration
 
@@ -216,7 +238,7 @@ Enabling via CLI:
 Or via environment variable::
 
 ```
--e DYNAMIC_TOOLSETS=1 \
+-e ENABLE_DYNAMIC_TOOLSETS=1 \
 ```
 
 With dynamic toolsets enabled, the LLM will be able to list and activate toolsets on demand via tool interface.

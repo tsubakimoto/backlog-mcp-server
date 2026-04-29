@@ -7,10 +7,9 @@ import dotenv from 'dotenv';
 import { default as env } from 'env-var';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { createTranslationHelper } from './createTranslationHelper.js';
-import { createBacklogMcpServer } from './createBacklogMcpServer.js';
+import { createBacklogMcpServerFactory } from './createBacklogMcpServerFactory.js';
+import { normalizeHttpPath } from './httpMcpHandler.js';
 import { runHttpMcpServer } from './httpMcpServer.js';
-import { createBacklogClientRegistry } from './utils/backlogClientRegistry.js';
 import { logger } from './utils/logger.js';
 import packageJson from '../package.json' with { type: 'json' };
 
@@ -118,47 +117,24 @@ Available toolsets:
   })
   .parseSync();
 
-const clientRegistry = createBacklogClientRegistry();
-const backlog = clientRegistry.createScopedClient();
-
 const useFields = argv.optimizeResponse;
-
-const transHelper = createTranslationHelper();
-
-const maxTokens = argv.maxTokens;
-const prefix = argv.prefix;
 const enabledToolsets = argv.dynamicToolsets
   ? (argv.enableToolsets as string[]).filter((a) => a !== 'all')
   : (argv.enableToolsets as string[]);
-
-const mcpOption = { useFields: useFields, maxTokens, prefix };
-
-// Factory: creates a fresh MCP server with all tools registered.
-// Used once for stdio; one fresh instance per HTTP session for Streamable HTTP.
-const createServer = () =>
-  createBacklogMcpServer({
-    version,
-    useFields,
-    backlog,
-    clientRegistry,
-    transHelper,
-    enabledToolsets,
-    mcpOption,
-    dynamicToolsets: argv.dynamicToolsets,
-  });
+const { createServer, transHelper } = createBacklogMcpServerFactory({
+  version,
+  optimizeResponse: useFields,
+  maxTokens: argv.maxTokens,
+  prefix: argv.prefix,
+  enabledToolsets,
+  dynamicToolsets: argv.dynamicToolsets,
+});
 
 if (argv.exportTranslations) {
   const data = transHelper.dump();
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(data, null, 2));
   process.exit(0);
-}
-
-function normalizeHttpPath(p: string): string {
-  if (!p.startsWith('/')) {
-    return `/${p}`;
-  }
-  return p;
 }
 
 async function main() {

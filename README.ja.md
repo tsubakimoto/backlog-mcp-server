@@ -139,6 +139,52 @@ npm run dev
 }
 ```
 
+### HTTPトランスポート（Streamable HTTP）
+
+デフォルトでは **stdio** を使用します。代わりに [MCP Streamable HTTP](https://modelcontextprotocol.io/) トランスポート（HTTP上のJSON-RPC、stdio と同じツール群）を使う場合は、`--transport http` を指定するか `MCP_TRANSPORT=http` を設定してください。
+
+```bash
+npm run build
+MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
+```
+
+- **エンドポイント:** `http://<host>:<port><path>` に対する `POST` / `GET` / `DELETE`（既定パスは `/mcp`）
+- **セッション:** `initialize` 後の後続リクエストでは、サーバーが返した `mcp-session-id` ヘッダーを送る必要があります
+- **現在の制約:** セッションはプロセス内メモリに保存されます。コールドスタート、再起動、スケールアウト時には `mcp-session-id` が失効する場合があります。インメモリ registry の TTL / eviction は未実装です
+- **セキュリティ:** 既定の bind は `127.0.0.1` です。認証と TLS なしで信頼できないネットワークへ公開しないでください。Backlog API キーを使った MCP ツール操作が可能になります
+
+環境変数（CLI フラグが指定された場合は CLI が優先されます）:
+
+| 変数 | 説明 |
+| ---- | ---- |
+| `MCP_TRANSPORT` | `stdio`（既定）または `http` |
+| `MCP_HTTP_HOST` | bind アドレス（既定 `127.0.0.1`） |
+| `MCP_HTTP_PORT` | ポート（既定 `3333`） |
+| `MCP_HTTP_PATH` | URL パス（既定 `/mcp`） |
+| `MCP_HTTP_JSON_RESPONSE` | サポートされる場合に SSE より JSON レスポンスを優先する場合は `true` |
+| `MCP_HTTP_ALLOWED_HOSTS` | `0.0.0.0` に bind する際の許可 `Host` 値（DNS rebinding 対策、カンマ区切り） |
+
+### Azure Functions
+
+同じ MCP HTTP トランスポートを Azure Functions v4 上でも実行できます。
+
+- **エンドポイント:** `GET /health`、`GET|POST|DELETE /mcp`
+- **認証:** `/mcp` は既定で Azure Functions の `function` 認証を使用します
+- **既定動作:** Azure Functions では `MCP_HTTP_JSON_RESPONSE=true` になります
+- **インフラ:** `infra/main.bicep`
+- **ガイド:** [`docs/azure-functions.md`](./docs/azure-functions.md)
+
+クイックスタート:
+
+```bash
+npm install
+npm run build
+cp local.settings.json.example local.settings.json
+npm run start:functions
+```
+
+Azure へのデプロイ、シークレット注入、検証手順は [`docs/azure-functions.md`](./docs/azure-functions.md) を参照してください。
+
 ## ツール設定
 
 `--enable-toolsets` コマンドラインフラグまたは `ENABLE_TOOLSETS` 環境変数を使用して、特定の **ツールセット** を選択的に有効または無効にすることができます。これにより、AIエージェントが利用できるツールをより細かく制御し、コンテキストサイズを削減するのに役立ちます。
@@ -192,7 +238,7 @@ CLI経由での有効化：
 または環境変数経由：
 
 ```
--e DYNAMIC_TOOLSETS=1 \
+-e ENABLE_DYNAMIC_TOOLSETS=1 \
 ```
 
 動的ツールセットを有効にすると、LLMはツールインターフェースを介してオンデマンドでツールセットを一覧表示およびアクティブ化できるようになります。
