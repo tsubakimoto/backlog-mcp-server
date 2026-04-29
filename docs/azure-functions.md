@@ -72,14 +72,14 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
 
    ```bash
    RESOURCE_GROUP=<resource-group>
-   REGION=<flex-consumption-region>
+   REGION=<region>
    az group create --name $RESOURCE_GROUP --location $REGION
    ```
 
 2. Deploy infrastructure:
 
    ```bash
-   FUNCTION_APP_NAME=<new-function-app-name>
+   FUNCTION_APP_NAME=<function-app-name>
    BACKLOG_DOMAIN=<your-domain.backlog.com>
    az deployment group create \
       --resource-group $RESOURCE_GROUP \
