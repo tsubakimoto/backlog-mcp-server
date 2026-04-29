@@ -74,12 +74,13 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
 
    ```bash
    FUNCTION_APP_NAME=<function-app-name>
+   BACKLOG_DOMAIN=<your-domain.backlog.com>
    az deployment group create \
      --resource-group $RESOURCE_GROUP \
      --template-file infra/main.bicep \
      --parameters @infra/main.parameters.example.json \
      --parameters appName=$FUNCTION_APP_NAME \
-     --parameters backlogDomain=<your-domain.backlog.com>
+     --parameters backlogDomain=$BACKLOG_DOMAIN
    ```
 
 3. Set the Backlog API key as an app setting.
@@ -87,10 +88,11 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
    Plain app setting:
 
    ```bash
+   BACKLOG_API_KEY=<your-api-key>
    az functionapp config appsettings set \
      --name $FUNCTION_APP_NAME \
-     --resource-group <resource-group> \
-     --settings BACKLOG_API_KEY=<your-api-key>
+     --resource-group $RESOURCE_GROUP \
+     --settings BACKLOG_API_KEY=$BACKLOG_API_KEY
    ```
 
    Or set a Key Vault reference string in the same `BACKLOG_API_KEY` setting after granting the Function App managed identity access to the secret.
