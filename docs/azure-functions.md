@@ -65,17 +65,20 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
 1. Create a resource group if needed:
 
    ```bash
-   az group create --name <resource-group> --location <region>
+   RESOURCE_GROUP=<resource-group>
+   REGION=<region>
+   az group create --name $RESOURCE_GROUP --location $REGION
    ```
 
 2. Deploy infrastructure:
 
    ```bash
+   FUNCTION_APP_NAME=<function-app-name>
    az deployment group create \
-     --resource-group <resource-group> \
+     --resource-group $RESOURCE_GROUP \
      --template-file infra/main.bicep \
      --parameters @infra/main.parameters.example.json \
-     --parameters appName=<function-app-name> \
+     --parameters appName=$FUNCTION_APP_NAME \
      --parameters backlogDomain=<your-domain.backlog.com>
    ```
 
@@ -85,7 +88,7 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
 
    ```bash
    az functionapp config appsettings set \
-     --name <function-app-name> \
+     --name $FUNCTION_APP_NAME \
      --resource-group <resource-group> \
      --settings BACKLOG_API_KEY=<your-api-key>
    ```
@@ -96,21 +99,21 @@ This repository assumes Azure Functions Core Tools publish as the default deploy
 
    ```bash
    npm run build
-   func azure functionapp publish <function-app-name> --javascript
+   func azure functionapp publish $FUNCTION_APP_NAME --javascript
    ```
 
 5. Get a function key and call the MCP endpoint:
 
    ```bash
    FUNCTION_KEY=$(az functionapp function keys list \
-     --resource-group <resource-group> \
-     --name <function-app-name> \
+     --resource-group $RESOURCE_GROUP \
+     --name $FUNCTION_APP_NAME \
      --function-name mcp \
      --query default -o tsv)
    ```
 
    ```bash
-   curl "https://<function-app-name>.azurewebsites.net/mcp?code=${FUNCTION_KEY}" \
+   curl "https://$FUNCTION_APP_NAME.azurewebsites.net/mcp?code=${FUNCTION_KEY}" \
      -H 'content-type: application/json' \
      -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"azure-test","version":"1.0.0"}}}'
    ```
