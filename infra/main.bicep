@@ -59,7 +59,6 @@ var applicationInsightsName = '${appName}-appi'
 var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
 var deploymentContainerName = toLower(take('app-package-${replace(replace(appName, '.', '-'), '_', '-')}-${uniqueSuffix}', 63))
 var storageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-var existingAppSettings = list('${functionApp.id}/config/appsettings', '2024-04-01').properties
 var desiredAppSettings = {
   AzureWebJobsStorage: storageConnectionString
   FUNCTIONS_EXTENSION_VERSION: '~4'
@@ -193,7 +192,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
 resource functionAppSettings 'Microsoft.Web/sites/config@2024-04-01' = {
   name: 'appsettings'
   parent: functionApp
-  properties: union(existingAppSettings, desiredAppSettings, optionalSecretAppSettings)
+  properties: union(desiredAppSettings, optionalSecretAppSettings)
 }
 
 output functionAppName string = functionApp.name
