@@ -172,7 +172,7 @@ MCP_TRANSPORT=http MCP_HTTP_PORT=3333 node build/index.js
 - **認証:** `/mcp` は既定で Azure Functions の `function` 認証を使用します
 - **既定動作:** Azure Functions では `MCP_HTTP_JSON_RESPONSE=true` になります
 - **インフラ:** `infra/main.bicep`
-- **ガイド:** [`docs/azure-functions.md`](./docs/azure-functions.md)
+- **ガイド:** [`docs/azure-functions.md`](./docs/azure-functions.md)（Flex Consumption）
 
 クイックスタート:
 
